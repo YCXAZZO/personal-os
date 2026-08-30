@@ -77,8 +77,11 @@ export async function GET(request: Request) {
       if (d) caliperMap.set(d, c);
     }
 
-    const dateSet = new Set<string>([...morningMap.keys(), ...caliperMap.keys()]);
-    const allDates = [...dateSet].sort();
+    const dateSet = new Set<string>([
+      ...Array.from(morningMap.keys()),
+      ...Array.from(caliperMap.keys())
+    ]);
+    const allDates = Array.from(dateSet).sort();
 
     const bodyFatTrend: { date: string; value: number }[] = [];
     for (const d of allDates) {

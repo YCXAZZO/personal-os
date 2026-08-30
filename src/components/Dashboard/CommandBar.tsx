@@ -59,7 +59,7 @@ export default function CommandBar({ onRecorded }: { onRecorded: () => void }) {
   const progressNames = Object.keys(progressMap)
     .sort((a, b) => b.length - a.length)
     .map(escapeRegex);
-  const progressSymbols = [...new Set(Object.values(progressMap))]
+  const progressSymbols = Array.from(new Set(Object.values(progressMap)))
     .sort((a, b) => b.length - a.length)
     .map(escapeRegex);
 
@@ -121,7 +121,7 @@ export default function CommandBar({ onRecorded }: { onRecorded: () => void }) {
     if (!raw) return;
 
     // 提取标签并清理输入
-    const extractedTags = [...new Set(raw.match(/#[^\s#]+/g) ?? [])];
+    const extractedTags = Array.from(new Set(raw.match(/#[^\s#]+/g) ?? []));
     const cleanedInput = raw.replace(/#[^\s#]+/g, '').trim();
 
     // 标签验证：存在的标签保留，不存在的跳过并提示

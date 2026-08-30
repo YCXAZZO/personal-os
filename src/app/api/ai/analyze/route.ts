@@ -118,7 +118,7 @@ function buildPrompt(
     for (const t of r.tags ?? []) if (t) s.tags.add(t);
     projectStats.set(name, s);
   }
-  const recordsText = [...projectStats.entries()]
+  const recordsText = Array.from(projectStats.entries()).map(([name, s]) => {
     .map(([name, s]) => {
       const ratingAvg = s.ratings.length
         ? (s.ratings.reduce((a, b) => a + b, 0) / s.ratings.length).toFixed(1)

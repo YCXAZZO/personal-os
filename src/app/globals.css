@@ -2,22 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 16px;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* 移动端适配：触摸目标 ≥44px、输入框 16px 防 iOS 缩放、降低毛玻璃强度 */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(4px);
+  }
 }
 
 @layer utilities {

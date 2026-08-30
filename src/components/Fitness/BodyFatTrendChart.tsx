@@ -41,7 +41,7 @@ export default function BodyFatTrendChart({ data }: { data: Point[] }) {
               color: '#fff',
               backdropFilter: 'blur(8px)',
             }}
-            formatter={(v: number | string) => [`${v}%`, '体脂率']}
+            formatter={(v) => [`${v ?? '—'}%`, '体脂率']}
           />
           <Line type="monotone" dataKey="value" name="体脂率" stroke="#4A8FE4" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
         </LineChart>

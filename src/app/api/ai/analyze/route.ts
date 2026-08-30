@@ -122,7 +122,7 @@ function buildPrompt(
       const ratingAvg = s.ratings.length
         ? (s.ratings.reduce((a, b) => a + b, 0) / s.ratings.length).toFixed(1)
         : '—';
-      return `${name}: ${s.duration}分钟, 标签: [${[...s.tags].join(', ')}], 平均评分: ${ratingAvg}/5`;
+      return `${name}: ${s.duration}分钟, 标签: [${Array.from(s.tags).join(', ')}], 平均评分: ${ratingAvg}/5`;
     })
     .join('\n');
 

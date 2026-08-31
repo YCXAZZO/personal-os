@@ -40,13 +40,13 @@ function extractSummary(text: string): string {
   return head.slice(0, 100);
 }
 
-async function getDeepseekKey(db: NeonHttpDatabase<typeof schema>): Promise<string | null> { ... }
+async function getDeepseekKey(db: NeonHttpDatabase<typeof schema>): Promise<string | null> {
   if (process.env.DEEPSEEK_API_KEY) return process.env.DEEPSEEK_API_KEY;
   const rows = await db.select().from(schema.api_keys).where(eq(schema.api_keys.provider, 'deepseek'));
   return rows[0]?.key ?? null;
 }
 
-async function gather(startDate: string, endDate: string, db: NeonHttpDatabase<typeof schema>) { ... }
+async function gather(startDate: string, endDate: string, db: NeonHttpDatabase<typeof schema>) {
   const records = await db
     .select()
     .from(schema.records)
@@ -111,7 +111,6 @@ function buildPrompt(
 ): string {
   const { records, morning, training, cardio, signals, projects } = g;
 
-  // 1. 通用领域（records）
   const projectStats = new Map<string, { duration: number; ratings: number[]; tags: Set<string> }>();
   for (const r of records) {
     const name = r.project_name ?? '未命名';
@@ -122,14 +121,12 @@ function buildPrompt(
     projectStats.set(name, s);
   }
   const recordsText = Array.from(projectStats.entries()).map(([name, s]) => {
-      const ratingAvg = s.ratings.length
-        ? (s.ratings.reduce((a, b) => a + b, 0) / s.ratings.length).toFixed(1)
-        : '—';
-      return `${name}: ${s.duration}分钟, 标签: [${Array.from(s.tags).join(', ')}], 平均评分: ${ratingAvg}/5`;
-    })
-    .join('\n');
+    const ratingAvg = s.ratings.length
+      ? (s.ratings.reduce((a, b) => a + b, 0) / s.ratings.length).toFixed(1)
+      : '—';
+    return `${name}: ${s.duration}分钟, 标签: [${Array.from(s.tags).join(', ')}], 平均评分: ${ratingAvg}/5`;
+  }).join('\n');
 
-  // 2. 健身领域
   const avgWeight = avg(morning.map((m) => m.weight_kg).filter((v): v is number => v != null));
   const avgWaist = avg(morning.map((m) => m.waist_cm).filter((v): v is number => v != null));
   const avgHr = avg(morning.map((m) => m.morning_hr_rest).filter((v): v is number => v != null));
@@ -148,11 +145,8 @@ function buildPrompt(
     `训练: ${training.length}次, 总容量 ${totalVolume}`,
     `有氧: ${cardio.length}次, 总时长 ${totalCardio}min`,
     signalList ? `异常事件: ${signalList}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  ].filter(Boolean).join('\n');
 
-  // 3. 项目进度
   const progressText = projects
     .filter((p) => p.total_target && p.current_progress)
     .map((p) => {
@@ -172,7 +166,6 @@ function buildPrompt(
   return parts.join('\n\n');
 }
 
-// GET：数据概览（不调用 AI）
 export async function GET(request: Request) {
   try {
     const url = process.env.DATABASE_URL;
@@ -193,7 +186,6 @@ export async function GET(request: Request) {
   }
 }
 
-// POST：AI 分析
 export async function POST(request: Request) {
   try {
     const url = process.env.DATABASE_URL;

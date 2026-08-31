@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
+import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import * as schema from '@/db/schema';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { normDate, todayStr } from '@/lib/dates';
@@ -39,13 +40,13 @@ function extractSummary(text: string): string {
   return head.slice(0, 100);
 }
 
-async function getDeepseekKey(db: any): Promise<string | null> {
+async function getDeepseekKey(db: NeonHttpDatabase<typeof schema>): Promise<string | null> { ... }
   if (process.env.DEEPSEEK_API_KEY) return process.env.DEEPSEEK_API_KEY;
   const rows = await db.select().from(schema.api_keys).where(eq(schema.api_keys.provider, 'deepseek'));
   return rows[0]?.key ?? null;
 }
 
-async function gather(startDate: string, endDate: string, db: any) {
+async function gather(startDate: string, endDate: string, db: NeonHttpDatabase<typeof schema>) { ... }
   const records = await db
     .select()
     .from(schema.records)

@@ -6,16 +6,18 @@ type Project = { id: string; name: string };
 
 export default function CompleteModal({
   presetMinutes,
+  defaultMinutes,
   onConfirm,
   onCancel,
 }: {
   presetMinutes: number;
+  defaultMinutes?: number;
   onConfirm: (projectName: string, actualMinutes: number) => void;
   onCancel: () => void;
 }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectName, setProjectName] = useState('');
-  const [actualMinutes, setActualMinutes] = useState(presetMinutes);
+  const [actualMinutes, setActualMinutes] = useState(defaultMinutes ?? presetMinutes);
 
   useEffect(() => {
     fetch('/api/projects')

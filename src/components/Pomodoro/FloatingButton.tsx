@@ -28,6 +28,7 @@ export default function FloatingButton() {
   const [showComplete, setShowComplete] = useState(false);
   const [mode, setMode] = useState<'countdown' | 'countup'>('countdown');
   const [presetMinutes, setPresetMinutes] = useState(25);
+  const [stopMinutes, setStopMinutes] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
 
   const refresh = useCallback(async () => {
@@ -61,6 +62,7 @@ export default function FloatingButton() {
   // 计时归零 → 自动弹出完成弹窗
   useEffect(() => {
     if (session?.status === 'running' && remaining <= 0 && !showComplete) {
+      setStopMinutes(null);
       setShowComplete(true);
     }
   }, [remaining, session?.status, showComplete]);
@@ -100,11 +102,17 @@ export default function FloatingButton() {
 
   async function handleStop() {
     if (!window.confirm('确定停止当前番茄钟吗？')) return;
-    await fetch('/api/pomodoro', { method: 'DELETE' });
-    setSession(null);
-    setShowComplete(false);
-    setShowTimer(false);
-    refresh();
+    if (elapsed > 0) {
+      // 手动停止但已投入时间 → 弹出完成弹窗，默认时长为实际已专注分钟
+      setStopMinutes(Math.round(elapsed / 60));
+      setShowComplete(true);
+      setShowTimer(false);
+    } else {
+      await fetch('/api/pomodoro', { method: 'DELETE' });
+      setSession(null);
+      setShowTimer(false);
+      refresh();
+    }
   }
 
   async function handleComplete(projectName: string, actualMinutes: number) {
@@ -120,6 +128,7 @@ export default function FloatingButton() {
     });
     setSession(null);
     setShowComplete(false);
+    setStopMinutes(null);
     refresh();
   }
 
@@ -127,6 +136,7 @@ export default function FloatingButton() {
     await fetch('/api/pomodoro', { method: 'DELETE' });
     setSession(null);
     setShowComplete(false);
+    setStopMinutes(null);
     refresh();
   }
 
@@ -172,6 +182,7 @@ export default function FloatingButton() {
       {showComplete && (
         <CompleteModal
           presetMinutes={session?.presetMinutes ?? presetMinutes}
+          defaultMinutes={stopMinutes ?? undefined}
           onConfirm={handleComplete}
           onCancel={handleCancelComplete}
         />

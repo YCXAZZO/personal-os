@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
-import { db, schema } from '@/db';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@/db/schema';
 import { asc, desc } from 'drizzle-orm';
 import { minusDays, mondayStr, normDate, todayStr } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+function getDb(): NeonHttpDatabase<typeof schema> {
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 未配置');
+  const sql = neon(process.env.DATABASE_URL);
+  return drizzle(sql, { schema });
+}
 
 function parseNum(s: string | null): number {
   if (!s) return 0;
@@ -17,6 +25,7 @@ export async function GET(request: Request) {
   // 消费 request 强制动态执行（Next.js 14 会缓存未使用 request 的 GET 路由）
   console.log('[stats] GET', request.url);
   try {
+    const db = getDb();
     // 注意：bare select（无 where/orderBy）在 neon-http 驱动下会异常返回空，
     // 所以这里统一显式加 orderBy 规避（不要使用无任何子句的 select）。
     const records = await db

@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
-import { db, schema } from '@/db';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@/db/schema';
 import { and, arrayContains, desc, eq } from 'drizzle-orm';
 import { todayStr } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+function getDb(): NeonHttpDatabase<typeof schema> {
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 未配置');
+  const sql = neon(process.env.DATABASE_URL);
+  return drizzle(sql, { schema });
+}
+
 export async function GET(request: Request) {
   try {
+    const db = getDb();
     const url = new URL(request.url);
     const all = url.searchParams.get('all') === '1';
     const tag = url.searchParams.get('tag');
@@ -51,6 +60,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const db = getDb();
     const body = await request.json();
     const projectName = String(body.projectName ?? '').trim();
     if (!projectName) {

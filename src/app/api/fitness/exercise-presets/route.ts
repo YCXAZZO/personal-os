@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import { db, schema } from '@/db';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@/db/schema';
 import { asc, eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+function getDb(): NeonHttpDatabase<typeof schema> {
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 未配置');
+  const sql = neon(process.env.DATABASE_URL);
+  return drizzle(sql, { schema });
+}
 
 const num = (v: unknown): number | null => {
   if (v === null || v === undefined || v === '') return null;
@@ -17,6 +25,7 @@ const int = (v: unknown): number | null => {
 
 export async function GET() {
   try {
+    const db = getDb();
     const rows = await db
       .select()
       .from(schema.exercise_presets)
@@ -42,6 +51,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const db = getDb();
     const b = await request.json();
     const name = String(b.name ?? '').trim();
     if (!name) return NextResponse.json({ success: false, error: 'name 必填' }, { status: 400 });
@@ -76,6 +86,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const db = getDb();
     const id = new URL(request.url).searchParams.get('id');
     if (!id) return NextResponse.json({ success: false, error: 'id 必填' }, { status: 400 });
     const b = await request.json();
@@ -112,6 +123,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const db = getDb();
     const id = new URL(request.url).searchParams.get('id');
     if (!id) return NextResponse.json({ success: false, error: 'id 必填' }, { status: 400 });
     await db.delete(schema.exercise_presets).where(eq(schema.exercise_presets.id, id));

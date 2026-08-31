@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
-import { db, schema } from '@/db';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@/db/schema';
 import { and, asc, gte, lte } from 'drizzle-orm';
 import { minusDays, normDate, todayStr } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+function getDb(): NeonHttpDatabase<typeof schema> {
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 未配置');
+  const sql = neon(process.env.DATABASE_URL);
+  return drizzle(sql, { schema });
+}
+
 export async function GET(request: Request) {
   try {
+    const db = getDb();
     const url = new URL(request.url);
     const days = Math.max(1, Number(url.searchParams.get('days')) || 30);
 

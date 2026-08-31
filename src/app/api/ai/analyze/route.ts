@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db, schema } from '@/db';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@/db/schema';
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 import { normDate, todayStr } from '@/lib/dates';
 
@@ -37,13 +39,13 @@ function extractSummary(text: string): string {
   return head.slice(0, 100);
 }
 
-async function getDeepseekKey(): Promise<string | null> {
+async function getDeepseekKey(db: any): Promise<string | null> {
   if (process.env.DEEPSEEK_API_KEY) return process.env.DEEPSEEK_API_KEY;
   const rows = await db.select().from(schema.api_keys).where(eq(schema.api_keys.provider, 'deepseek'));
   return rows[0]?.key ?? null;
 }
 
-async function gather(startDate: string, endDate: string) {
+async function gather(startDate: string, endDate: string, db: any) {
   const records = await db
     .select()
     .from(schema.records)
@@ -172,10 +174,17 @@ function buildPrompt(
 // GET：数据概览（不调用 AI）
 export async function GET(request: Request) {
   try {
-    const url = new URL(request.url);
-    const endDate = url.searchParams.get('endDate') || todayStr();
-    const startDate = url.searchParams.get('startDate') || endDate;
-    const g = await gather(startDate, endDate);
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      return NextResponse.json({ success: false, error: 'DATABASE_URL not set' }, { status: 500 });
+    }
+    const sql = neon(url);
+    const db = drizzle(sql, { schema });
+
+    const reqUrl = new URL(request.url);
+    const endDate = reqUrl.searchParams.get('endDate') || todayStr();
+    const startDate = reqUrl.searchParams.get('startDate') || endDate;
+    const g = await gather(startDate, endDate, db);
     return NextResponse.json({ success: true, summary: buildSummary(g) });
   } catch (error) {
     console.error('[ai analyze GET] 失败:', error);
@@ -186,6 +195,13 @@ export async function GET(request: Request) {
 // POST：AI 分析
 export async function POST(request: Request) {
   try {
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      return NextResponse.json({ success: false, error: 'DATABASE_URL not set' }, { status: 500 });
+    }
+    const sql = neon(url);
+    const db = drizzle(sql, { schema });
+
     const b = await request.json();
     const startDate = String(b.startDate ?? '');
     const endDate = String(b.endDate ?? '');
@@ -194,7 +210,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: '日期范围必填' }, { status: 400 });
     }
 
-    const g = await gather(startDate, endDate);
+    const g = await gather(startDate, endDate, db);
     if (g.records.length === 0 && g.morning.length === 0 && g.training.length === 0 && g.cardio.length === 0) {
       return NextResponse.json({ success: false, error: '当前日期范围内无数据，请先记录一些内容' });
     }
@@ -207,7 +223,7 @@ export async function POST(request: Request) {
 
     const userPrompt = buildPrompt(g, startDate, endDate, extraContext, lastSummary);
 
-    const apiKey = await getDeepseekKey();
+    const apiKey = await getDeepseekKey(db);
     if (!apiKey) {
       return NextResponse.json({ success: false, error: '请先在设置中配置 DeepSeek API Key' });
     }

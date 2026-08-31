@@ -155,3 +155,17 @@ export const api_keys = pgTable('api_keys', {
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });
+
+// ============ 番茄时钟 ============
+
+export const pomodoro_sessions = pgTable('pomodoro_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  status: text('status').notNull().default('idle'),
+  preset_minutes: integer('preset_minutes'),
+  start_time: timestamp('start_time'),
+  elapsed_seconds: integer('elapsed_seconds').notNull().default(0),
+  actual_minutes: integer('actual_minutes'),
+  project_name: text('project_name'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow(),
+});

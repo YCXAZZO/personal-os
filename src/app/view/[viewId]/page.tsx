@@ -1,10 +1,19 @@
 import MainLayout from '@/components/Layout/MainLayout';
-import { db, schema } from '@/db';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import * as schema from '@/db/schema';
 import { arrayContains, desc, eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ViewPage({ params }: { params: { viewId: string } }) {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    return <div>数据库连接配置缺失</div>;
+  }
+  const sql = neon(url);
+  const db = drizzle(sql, { schema });
+
   const viewRows = await db
     .select()
     .from(schema.smart_views)

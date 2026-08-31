@@ -21,7 +21,21 @@ export default function StatsOverview({ refreshKey }: { refreshKey: number }) {
   }, [refreshKey]);
 
   if (error) return <p className="text-red-500">❌ {error}</p>;
-  if (!stats) return <p className="text-gray-500">加载中…</p>;
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-3 gap-3">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="animate-pulse rounded-xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur dark:border-white/10 dark:bg-black/10"
+          >
+            <div className="mx-auto h-6 w-12 rounded bg-gray-400/40 dark:bg-gray-500/40" />
+            <div className="mx-auto mt-2 h-3 w-16 rounded bg-gray-400/40 dark:bg-gray-500/40" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const cards = [
     { label: '今日总时长', value: stats.todayMinutes, unit: '分钟' },

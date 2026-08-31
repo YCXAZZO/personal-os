@@ -47,6 +47,7 @@ export default function ReviewPage() {
   const [endDate, setEndDate] = useState(today);
 
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [extraContext, setExtraContext] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -56,12 +57,15 @@ export default function ReviewPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const loadSummary = useCallback(async () => {
+    setSummaryLoading(true);
     try {
       const res = await fetch(`/api/ai/analyze?startDate=${startDate}&endDate=${endDate}`);
       const d = await res.json();
       if (d.success) setSummary(d.summary);
     } catch {
       /* ignore */
+    } finally {
+      setSummaryLoading(false);
     }
   }, [startDate, endDate]);
 
@@ -76,12 +80,8 @@ export default function ReviewPage() {
   }, []);
 
   useEffect(() => {
-    loadSummary();
-  }, [loadSummary]);
-
-  useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    Promise.all([loadSummary(), loadHistory()]);
+  }, [loadSummary, loadHistory]);
 
   async function analyze() {
     setAnalyzing(true);
@@ -153,14 +153,25 @@ export default function ReviewPage() {
       {/* 数据概览 */}
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-semibold">数据概览</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {cards.map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur dark:border-white/10 dark:bg-black/10">
-              <div className="text-xl font-bold">{value}</div>
-              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{label}</div>
-            </div>
-          ))}
-        </div>
+        {summaryLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur dark:border-white/10 dark:bg-black/10">
+                <div className="mx-auto h-6 w-12 rounded bg-gray-400/40 dark:bg-gray-500/40" />
+                <div className="mx-auto mt-2 h-3 w-16 rounded bg-gray-400/40 dark:bg-gray-500/40" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {cards.map(([label, value]) => (
+              <div key={label} className="rounded-xl border border-white/20 bg-white/10 p-4 text-center backdrop-blur dark:border-white/10 dark:bg-black/10">
+                <div className="text-xl font-bold">{value}</div>
+                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 补充上下文 + AI 分析 */}

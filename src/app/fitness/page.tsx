@@ -534,7 +534,14 @@ export default function FitnessPage() {
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-semibold">📊 数据看板</h2>
         {!stats ? (
-          <p className="text-gray-500">加载中…</p>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="h-[250px] animate-pulse rounded-xl border border-white/20 bg-white/10 backdrop-blur dark:border-white/10 dark:bg-black/10"
+              />
+            ))}
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -547,7 +554,14 @@ export default function FitnessPage() {
       </section>
 
       {loading ? (
-        <p className="mt-6 text-gray-500">加载中…</p>
+        <div className="mt-6 space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-xl border border-white/20 bg-white/10 backdrop-blur dark:border-white/10 dark:bg-black/10"
+            />
+          ))}
+        </div>
       ) : (
         <div className={`mt-6 space-y-4 ${isCarbCut ? 'opacity-70' : ''}`}>
           {/* 区块一：晨起快照 */}

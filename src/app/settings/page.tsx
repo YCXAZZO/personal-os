@@ -54,6 +54,10 @@ export default function SettingsPage() {
   const [aiKeyMsg, setAiKeyMsg] = useState<string | null>(null);
   const [aiKeyBusy, setAiKeyBusy] = useState(false);
 
+  // ---- 重置数据 ----
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
+  const [resetBusy, setResetBusy] = useState(false);
+
   const loadProjects = async () => {
     setLoading(true);
     try {
@@ -289,6 +293,32 @@ export default function SettingsPage() {
     }
   }
 
+  // ===== 重置数据 =====
+  async function handleReset() {
+    if (!window.confirm('确定要清空所有数据吗？此操作不可撤销！')) return;
+    const input = window.prompt('此操作不可恢复。请输入"确认清空"以继续：');
+    if (input !== '确认清空') {
+      setResetMsg('❌ 输入不匹配，未清空');
+      return;
+    }
+    setResetBusy(true);
+    setResetMsg(null);
+    try {
+      const res = await fetch('/api/reset', { method: 'DELETE' });
+      const d = await res.json();
+      if (d.success) {
+        setResetMsg('✅ 所有数据已清空');
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        setResetMsg(`❌ ${d.error ?? '清空失败'}`);
+      }
+    } catch {
+      setResetMsg('❌ 清空失败');
+    } finally {
+      setResetBusy(false);
+    }
+  }
+
   return (
     <MainLayout>
       <h1 className="text-2xl font-bold">⚙️ 设置页</h1>
@@ -417,6 +447,22 @@ export default function SettingsPage() {
           </div>
           {aiKeyMsg && <p className="mt-3 text-sm">{aiKeyMsg}</p>}
         </form>
+      </div>
+
+      {/* 重置数据 */}
+      <div className="mt-4 rounded-xl border border-red-500/30 bg-red-50/10 p-5 backdrop-blur dark:bg-red-900/10">
+        <h2 className="font-semibold text-red-600 dark:text-red-400">🗑️ 清空所有数据</h2>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          将清空所有打卡记录、健身数据、AI历史、番茄记录。项目和标签配置将保留。
+        </p>
+        <button
+          onClick={handleReset}
+          disabled={resetBusy}
+          className="mt-4 rounded-lg bg-red-500 px-4 py-2 text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+        >
+          {resetBusy ? '清空中…' : '清空所有数据'}
+        </button>
+        {resetMsg && <p className="mt-3 text-sm">{resetMsg}</p>}
       </div>
 
       {/* 项目模态框 */}

@@ -37,6 +37,7 @@ export default function Header() {
     ...views.map((v) => ({ label: v.name, href: `/view/${v.id}` })),
     { label: '健身', href: '/fitness' },
     { label: '复盘', href: '/review' },
+    { label: '📋 任务', href: '/tasks' },
   ];
 
   const bottomItem = (active: boolean) =>
@@ -129,6 +130,10 @@ export default function Header() {
           <Link href="/fitness" className={bottomItem(pathname === '/fitness')}>
             <span className="text-lg">💪</span>
             <span>健身</span>
+          </Link>
+          <Link href="/tasks" className={bottomItem(pathname === '/tasks')}>
+            <span className="text-lg">📋</span>
+            <span>任务</span>
           </Link>
           <Link href="/settings" className={bottomItem(pathname === '/settings')}>
             <span className="text-lg">⚙️</span>

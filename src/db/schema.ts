@@ -7,6 +7,7 @@ import {
   boolean,
   date,
   timestamp,
+  json,
 } from 'drizzle-orm/pg-core';
 
 // ============ 通用领域 ============
@@ -175,5 +176,22 @@ export const pomodoro_sessions = pgTable('pomodoro_sessions', {
 export const user_profile = pgTable('user_profile', {
   id: uuid('id').defaultRandom().primaryKey(),
   age: integer('age'),
+  updated_at: timestamp('updated_at').defaultNow(),
+});
+
+// ============ 任务清单 ============
+
+export const tasks = pgTable('tasks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: text('title').notNull(),
+  project_name: text('project_name'),
+  default_duration: integer('default_duration'),
+  due_date: date('due_date'),
+  status: text('status').default('pending'),
+  repeat_type: text('repeat_type').default('none'),
+  repeat_days: json('repeat_days').$type<number[]>(),
+  parent_task_id: uuid('parent_task_id'),
+  completed_at: timestamp('completed_at'),
+  created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });

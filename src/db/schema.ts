@@ -169,3 +169,11 @@ export const pomodoro_sessions = pgTable('pomodoro_sessions', {
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });
+
+// ============ 用户档案 ============
+
+export const user_profile = pgTable('user_profile', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  age: integer('age'),
+  updated_at: timestamp('updated_at').defaultNow(),
+});

@@ -54,6 +54,12 @@ export default function SettingsPage() {
   const [aiKeyMsg, setAiKeyMsg] = useState<string | null>(null);
   const [aiKeyBusy, setAiKeyBusy] = useState(false);
 
+  // ---- 个人配置 ----
+  const [age, setAge] = useState<string>('');
+  const [savedAge, setSavedAge] = useState<number | null>(null);
+  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [profileBusy, setProfileBusy] = useState(false);
+
   // ---- 重置数据 ----
   const [resetMsg, setResetMsg] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
@@ -98,6 +104,15 @@ export default function SettingsPage() {
     fetch('/api/settings/ai-key')
       .then((r) => r.json())
       .then((d) => setHasKey(!!d.hasKey))
+      .catch(() => {});
+    fetch('/api/user/profile')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.age != null) {
+          setSavedAge(d.age);
+          setAge(String(d.age));
+        }
+      })
       .catch(() => {});
   }, [loadTags, loadViews]);
 
@@ -293,6 +308,36 @@ export default function SettingsPage() {
     }
   }
 
+  // ===== 个人配置 =====
+  async function saveAge() {
+    const n = Number(age);
+    if (!Number.isFinite(n) || n <= 0 || n > 120) {
+      setProfileMsg('❌ 请输入 1–120 之间的年龄');
+      return;
+    }
+    setProfileBusy(true);
+    setProfileMsg(null);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ age: Math.round(n) }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setSavedAge(d.age ?? Math.round(n));
+        setAge(String(d.age ?? Math.round(n)));
+        setProfileMsg('✅ 年龄已保存，心率区间将自动推算');
+      } else {
+        setProfileMsg(`❌ ${d.error ?? '保存失败'}`);
+      }
+    } catch {
+      setProfileMsg('❌ 保存失败');
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
   // ===== 重置数据 =====
   async function handleReset() {
     if (!window.confirm('确定要清空所有数据吗？此操作不可撤销！')) return;
@@ -359,6 +404,38 @@ export default function SettingsPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* 个人配置 */}
+      <div className="mt-6 rounded-xl border border-white/20 bg-white/10 p-5 backdrop-blur dark:border-white/10 dark:bg-black/10">
+        <h2 className="font-semibold">👤 个人配置</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">设置年龄后，有氧心率区间将基于晨起静息心率自动推算。</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            年龄
+            <input
+              type="number"
+              min={1}
+              max={120}
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              className="w-24 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-white/10 dark:bg-black/10"
+              placeholder="如 30"
+            />
+            岁
+          </label>
+          <button
+            onClick={saveAge}
+            disabled={profileBusy}
+            className="rounded-lg bg-blue-500 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+          >
+            {profileBusy ? '保存中…' : '💾 保存'}
+          </button>
+          {savedAge != null && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">当前年龄：{savedAge} 岁</span>
+          )}
+        </div>
+        {profileMsg && <p className="mt-3 text-sm">{profileMsg}</p>}
       </div>
 
       {/* 标签管理 */}

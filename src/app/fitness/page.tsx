@@ -211,6 +211,10 @@ export default function FitnessPage() {
   const [selectedExercisePreset, setSelectedExercisePreset] = useState('');
   const [selectedCardioPreset, setSelectedCardioPreset] = useState('');
   const [stats, setStats] = useState<FitnessStats | null>(null);
+  const [profile, setProfile] = useState<{ age: number | null; latestRestHr: number | null }>({
+    age: null,
+    latestRestHr: null,
+  });
 
   // 看板数据（全量趋势，不随单日切换变化，仅在挂载时加载一次）
   useEffect(() => {
@@ -219,6 +223,29 @@ export default function FitnessPage() {
       .then((d) => setStats(d))
       .catch(() => {});
   }, []);
+
+  // 加载个人配置（年龄 + 最新静息心率），用于前端自动推算心率区
+  useEffect(() => {
+    fetch('/api/user/profile')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          setProfile({ age: d.age ?? null, latestRestHr: d.latestRestHr ?? null });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // 心率区自动推算（与后端 /api/fitness/cardio 逻辑一致）
+  function computeZone(avgHrNum: number): string | null {
+    const { age, latestRestHr } = profile;
+    if (age == null || latestRestHr == null || !Number.isFinite(avgHrNum)) return null;
+    const maxHr = 220 - age;
+    const hrr = maxHr - latestRestHr;
+    if (avgHrNum >= latestRestHr + hrr * 0.8) return '无氧';
+    if (avgHrNum >= latestRestHr + hrr * 0.65) return '有氧耐力';
+    return '燃脂';
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -889,13 +916,31 @@ export default function FitnessPage() {
               <input className={inputCls} type="number" value={cardioForm.durationMin} onChange={(e) => setCardioForm({ ...cardioForm, durationMin: e.target.value })} />
             </Field>
             <Field label="平均心率">
-              <input className={inputCls} type="number" value={cardioForm.avgHr} onChange={(e) => setCardioForm({ ...cardioForm, avgHr: e.target.value })} />
+              <input
+                className={inputCls}
+                type="number"
+                value={cardioForm.avgHr}
+                onChange={(e) => {
+                  const avgHr = e.target.value;
+                  const zone = computeZone(Number(avgHr));
+                  setCardioForm({ ...cardioForm, avgHr, hrZonePrimary: zone ?? cardioForm.hrZonePrimary });
+                }}
+              />
             </Field>
             <Field label="峰值心率">
               <input className={inputCls} type="number" value={cardioForm.peakHr} onChange={(e) => setCardioForm({ ...cardioForm, peakHr: e.target.value })} />
             </Field>
             <Field label="心率区">
-              <input className={inputCls} value={cardioForm.hrZonePrimary} onChange={(e) => setCardioForm({ ...cardioForm, hrZonePrimary: e.target.value })} />
+              <select
+                className={inputCls}
+                value={cardioForm.hrZonePrimary}
+                onChange={(e) => setCardioForm({ ...cardioForm, hrZonePrimary: e.target.value })}
+              >
+                <option value="">请选择</option>
+                <option value="燃脂">燃脂</option>
+                <option value="有氧耐力">有氧耐力</option>
+                <option value="无氧">无氧</option>
+              </select>
             </Field>
             <Field label="出汗等级 (0-3)">
               <input className={inputCls} type="number" value={cardioForm.perceivedSweat} onChange={(e) => setCardioForm({ ...cardioForm, perceivedSweat: e.target.value })} />
@@ -903,6 +948,11 @@ export default function FitnessPage() {
             <Field label="距离 (km, 可选)">
               <input className={inputCls} type="number" step="0.1" value={cardioForm.distanceKm} onChange={(e) => setCardioForm({ ...cardioForm, distanceKm: e.target.value })} />
             </Field>
+            <p className="col-span-2 -mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {profile.age != null && profile.latestRestHr != null
+                ? `自动推算：年龄 ${profile.age} 岁 · 静息心率 ${profile.latestRestHr} bpm（输入平均心率后自动填充）`
+                : '自动推算需先在「设置 → 个人配置」填写年龄，并录入晨起静息心率'}
+            </p>
             <button type="submit" className="col-span-2 mt-2 rounded-lg bg-blue-500 py-2 font-medium text-white hover:bg-blue-600">
               保存
             </button>

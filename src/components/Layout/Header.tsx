@@ -38,6 +38,7 @@ export default function Header() {
     { label: '健身', href: '/fitness' },
     { label: '复盘', href: '/review' },
     { label: '📋 任务', href: '/tasks' },
+    { label: '🥗 饮食', href: '/nutrition' },
   ];
 
   const bottomItem = (active: boolean) =>
@@ -134,6 +135,10 @@ export default function Header() {
           <Link href="/tasks" className={bottomItem(pathname === '/tasks')}>
             <span className="text-lg">📋</span>
             <span>任务</span>
+          </Link>
+          <Link href="/nutrition" className={bottomItem(pathname === '/nutrition')}>
+            <span className="text-lg">🥗</span>
+            <span>饮食</span>
           </Link>
           <Link href="/settings" className={bottomItem(pathname === '/settings')}>
             <span className="text-lg">⚙️</span>

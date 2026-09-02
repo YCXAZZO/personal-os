@@ -20,6 +20,9 @@ const SYSTEM_PROMPT = `你是一名专业的个人成长教练和健康管理顾
 ### 🏋️ 训练与恢复平衡
 （基于健身数据评估训练状态，给出维持/增负/减载建议）
 
+### 🥗 饮食建议
+（分析近 7 天饮食记录的类别占比与放纵频率：若放纵餐过多（≥3 次/周），明确给出"本周放纵餐 N 次，建议调整至 1-2 次"；若每日三餐记录不全，提醒补录）
+
 ### 🎯 下周微习惯策略
 （针对每个主要项目，给出一个可执行的微习惯建议）`;
 
@@ -73,18 +76,23 @@ async function gather(startDate: string, endDate: string, db: NeonHttpDatabase<t
     .from(schema.body_signals)
     .where(and(gte(schema.body_signals.date, startDate), lte(schema.body_signals.date, endDate)));
 
+  const meals = await db
+    .select()
+    .from(schema.meal_logs)
+    .where(and(gte(schema.meal_logs.date, startDate), lte(schema.meal_logs.date, endDate)));
+
   const projects = await db
     .select()
     .from(schema.projects)
     .orderBy(desc(schema.projects.name));
 
-  return { records, morning, training, cardio, signals, projects };
+  return { records, morning, training, cardio, signals, projects, meals };
 }
 
 type Gathered = Awaited<ReturnType<typeof gather>>;
 
 function buildSummary(g: Gathered) {
-  const { records, morning, training, cardio } = g;
+  const { records, morning, training, cardio, meals } = g;
   const activeProjects = new Set(records.map((r) => r.project_name)).size;
   const totalDuration = records.reduce((s, r) => s + (r.duration_minutes ?? 0), 0);
   const avgHr = avg(morning.map((m) => m.morning_hr_rest).filter((v): v is number => v != null));
@@ -96,6 +104,8 @@ function buildSummary(g: Gathered) {
     activeProjects,
     trainingCount: training.length,
     cardioCount: cardio.length,
+    mealCount: meals.length,
+    indulgenceCount: meals.filter((m) => (m.category ?? '') === '放纵餐').length,
     avgMorningHr: avgHr != null ? Math.round(avgHr) : null,
     avgSleepQuality: avgSleep != null ? Math.round(avgSleep * 10) / 10 : null,
     hasData: records.length > 0 || morning.length > 0 || training.length > 0 || cardio.length > 0,
@@ -109,7 +119,7 @@ function buildPrompt(
   extraContext?: string,
   lastSummary?: string | null,
 ): string {
-  const { records, morning, training, cardio, signals, projects } = g;
+  const { records, morning, training, cardio, signals, projects, meals } = g;
 
   const projectStats = new Map<string, { duration: number; ratings: number[]; tags: Set<string> }>();
   for (const r of records) {
@@ -157,10 +167,25 @@ function buildPrompt(
     })
     .join('\n');
 
+  // 饮食记录：类别占比 + 放纵频率
+  const catCounts = new Map<string, number>();
+  for (const m of meals) {
+    const c = m.category || '未分类';
+    catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
+  }
+  const indulgenceCount = meals.filter((m) => (m.category ?? '') === '放纵餐').length;
+  const nutritionText =
+    meals.length === 0
+      ? '近 7 天无饮食日记记录，请提醒用户开始记录三餐'
+      : `共 ${meals.length} 餐；分类占比：${Array.from(catCounts.entries())
+          .map(([c, n]) => `${c} ${n} 次`)
+          .join('，')}；放纵餐 ${indulgenceCount} 次`;
+
   const parts: string[] = [`【时间范围】${startDate} ~ ${endDate}`];
   if (recordsText) parts.push(`## 学习/爱好记录\n${recordsText}`);
   if (fitnessText) parts.push(`## 健身数据\n${fitnessText}`);
   if (progressText) parts.push(`## 项目进度\n${progressText}`);
+  parts.push(`## 饮食记录\n${nutritionText}`);
   if (extraContext) parts.push(`## 补充上下文\n${extraContext}`);
   if (lastSummary) parts.push(`【上次分析摘要】${lastSummary}`);
   return parts.join('\n\n');

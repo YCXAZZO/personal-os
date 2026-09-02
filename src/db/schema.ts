@@ -8,6 +8,8 @@ import {
   date,
   timestamp,
   json,
+  jsonb,
+  index,
 } from 'drizzle-orm/pg-core';
 
 // ============ 通用领域 ============
@@ -195,3 +197,35 @@ export const tasks = pgTable('tasks', {
   created_at: timestamp('created_at').defaultNow(),
   updated_at: timestamp('updated_at').defaultNow(),
 });
+
+// ============ 饮食管理 ============
+
+export const recipes = pgTable(
+  'recipes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    category: text('category'),
+    ingredients: jsonb('ingredients').$type<string[]>(),
+    steps: text('steps').array(),
+    notes: text('notes'),
+    created_at: timestamp('created_at').defaultNow(),
+    updated_at: timestamp('updated_at').defaultNow(),
+  },
+  (t) => [index('recipes_name_idx').on(t.name)],
+);
+
+export const meal_logs = pgTable(
+  'meal_logs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    date: date('date').notNull(),
+    meal_type: text('meal_type'),
+    recipe_id: uuid('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+    custom_name: text('custom_name'),
+    category: text('category'),
+    notes: text('notes'),
+    created_at: timestamp('created_at').defaultNow(),
+  },
+  (t) => [index('meal_logs_date_idx').on(t.date)],
+);

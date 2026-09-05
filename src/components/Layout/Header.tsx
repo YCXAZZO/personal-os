@@ -51,7 +51,7 @@ export default function Header() {
       {/* 桌面端顶部导航（≥768px） */}
       <header className="sticky top-0 z-50 hidden h-16 border-b border-white/20 bg-white/10 backdrop-blur-md md:block dark:border-white/10 dark:bg-black/10">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+          <Link href="/" prefetch className="flex items-center gap-2 text-lg font-semibold">
             <span>🧠</span>
             <span>Personal OS</span>
           </Link>
@@ -63,6 +63,7 @@ export default function Header() {
                 <Link
                   key={tab.href}
                   href={tab.href}
+                  prefetch
                   className={`flex h-full items-center border-b-2 px-3 text-sm font-medium transition-colors ${
                     active
                       ? 'border-blue-500 text-blue-500'
@@ -85,6 +86,7 @@ export default function Header() {
             </button>
             <Link
               href="/settings"
+              prefetch
               aria-label="设置"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-white/20 dark:hover:bg-white/10"
             >
@@ -105,6 +107,7 @@ export default function Header() {
                 <Link
                   key={v.id}
                   href={`/view/${v.id}`}
+                  prefetch
                   onClick={() => setViewsOpen(false)}
                   className={`block rounded-lg px-3 py-2.5 text-sm ${
                     pathname === `/view/${v.id}` ? 'text-blue-500' : 'text-gray-700 dark:text-gray-300'
@@ -117,7 +120,7 @@ export default function Header() {
           </div>
         )}
         <div className="flex items-center justify-around py-2">
-          <Link href="/" className={bottomItem(pathname === '/')}>
+          <Link href="/" prefetch className={bottomItem(pathname === '/')}>
             <span className="text-lg">📊</span>
             <span>总览</span>
           </Link>
@@ -128,19 +131,19 @@ export default function Header() {
             <span className="text-lg">📚</span>
             <span>视图</span>
           </button>
-          <Link href="/fitness" className={bottomItem(pathname === '/fitness')}>
+          <Link href="/fitness" prefetch className={bottomItem(pathname === '/fitness')}>
             <span className="text-lg">💪</span>
             <span>健身</span>
           </Link>
-          <Link href="/tasks" className={bottomItem(pathname === '/tasks')}>
+          <Link href="/tasks" prefetch className={bottomItem(pathname === '/tasks')}>
             <span className="text-lg">📋</span>
             <span>任务</span>
           </Link>
-          <Link href="/nutrition" className={bottomItem(pathname === '/nutrition')}>
+          <Link href="/nutrition" prefetch className={bottomItem(pathname === '/nutrition')}>
             <span className="text-lg">🥗</span>
             <span>饮食</span>
           </Link>
-          <Link href="/settings" className={bottomItem(pathname === '/settings')}>
+          <Link href="/settings" prefetch className={bottomItem(pathname === '/settings')}>
             <span className="text-lg">⚙️</span>
             <span>设置</span>
           </Link>

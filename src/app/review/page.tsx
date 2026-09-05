@@ -1,8 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import MainLayout from '@/components/Layout/MainLayout';
-import ReactMarkdown from 'react-markdown';
+
+// react-markdown 懒加载：复盘结果/历史为异步数据，无需拖慢页面首包
+const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: false });
 
 type Summary = {
   recordCount: number;

@@ -1,10 +1,23 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import MainLayout from '@/components/Layout/MainLayout';
 import FatigueRatioCard from '@/components/Fitness/FatigueRatioCard';
-import BodyFatTrendChart from '@/components/Fitness/BodyFatTrendChart';
-import WeeklyVolumeChart from '@/components/Fitness/WeeklyVolumeChart';
+
+// 图表组件懒加载（recharts 体积大，延迟到客户端异步加载，减小本页首包）
+const BodyFatTrendChart = dynamic(() => import('@/components/Fitness/BodyFatTrendChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] animate-pulse rounded-xl border border-white/20 bg-white/10 backdrop-blur dark:border-white/10 dark:bg-black/10" />
+  ),
+});
+const WeeklyVolumeChart = dynamic(() => import('@/components/Fitness/WeeklyVolumeChart'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] animate-pulse rounded-xl border border-white/20 bg-white/10 backdrop-blur dark:border-white/10 dark:bg-black/10" />
+  ),
+});
 
 type MorningData = {
   date: string;
